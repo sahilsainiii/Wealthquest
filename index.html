@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WealthQuest">
+  <meta name="theme-color" content="#080B14">
+  <link rel="manifest" href="manifest.json">
+  <title>WealthQuest — Financial RPG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080B14;
+      --bg2: #0F1423;
+      --bg3: #161D30;
+      --border: rgba(255,255,255,0.07);
+      --gold: #F4B942;
+      --gold2: #FFD87C;
+      --green: #00D68F;
+      --red: #FF4D6D;
+      --blue: #4E9FFF;
+      --purple: #9B6DFF;
+      --orange: #FF8000;
+      --text: #E8EDF5;
+      --text2: #8896A7;
+      --text3: #3A4558;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font-d: 'Sora', sans-serif;
+      --font-b: 'DM Sans', sans-serif;
+      --safe-b: env(safe-area-inset-bottom, 20px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+    * { margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent; }
+    html,body { height:100%;background:var(--bg);color:var(--text);font-family:var(--font-b);overflow:hidden;-webkit-font-smoothing:antialiased; }
+    #app { height:100dvh;display:flex;flex-direction:column;overflow:hidden; }
+    #main { flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch; }
+    .panel { display:none;padding:16px 16px calc(24px + var(--safe-b));min-height:100%;animation:fadeUp .25s ease; }
+    .panel.active { display:block; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    /* NAV */
+    #nav { display:flex;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:var(--safe-b);flex-shrink:0; }
+    .nav-btn { flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;background:none;border:none;color:var(--text3);font-family:var(--font-b);font-size:10px;font-weight:500;gap:4px;cursor:pointer;transition:color .2s;position:relative; }
+    .nav-btn.active { color:var(--gold); }
+    .nav-btn svg { width:22px;height:22px; }
+    .nav-dot { position:absolute;top:8px;right:calc(50% - 16px);width:6px;height:6px;background:var(--red);border-radius:50%;display:none; }
+    .nav-dot.show { display:block; }
+
+    /* TYPOGRAPHY */
+    .page-title { font-family:var(--font-d);font-size:26px;font-weight:800;color:var(--text);margin-bottom:4px; }
+    .page-sub { font-size:13px;color:var(--text2);margin-bottom:20px; }
+    h3 { font-family:var(--font-d);font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px; }
+
+    /* CARDS */
+    .card { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px; }
+    .card-sm { background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px; }
+
+    /* PLAYER CARD */
+    .player-card { background:linear-gradient(135deg,#0D1526 0%,#101820 60%,#0A1018 100%);border:1px solid rgba(244,185,66,.18);border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden; }
+    .player-card::before { content:'';position:absolute;top:-50px;right:-50px;width:180px;height:180px;background:radial-gradient(circle,rgba(244,185,66,.07) 0%,transparent 70%);pointer-events:none; }
+    .player-card::after { content:'';position:absolute;bottom:-30px;left:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(78,159,255,.05) 0%,transparent 70%);pointer-events:none; }
+    .ph { display:flex;align-items:center;gap:14px;margin-bottom:16px; }
+    .avatar { width:54px;height:54px;background:linear-gradient(135deg,var(--gold),#D4941C);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 0 20px rgba(244,185,66,.3); }
+    .pname { font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--text); }
+    .lvl-badge { display:inline-flex;align-items:center;gap:5px;background:rgba(244,185,66,.1);border:1px solid rgba(244,185,66,.22);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--gold);margin-top:4px; }
+    .xp-lbl { display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px; }
+    .xp-bar { height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden; }
+    .xp-fill { height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;transition:width .8s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 12px rgba(244,185,66,.35); }
+    .pstats { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px; }
+    .stat-chip { background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center; }
+    .stat-chip .sv { font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--text); }
+    .stat-chip .sl { font-size:10px;color:var(--text2);margin-top:2px; }
+
+    /* HOME HEADER */
+    #home-hdr { display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-top:var(--safe-t); }
+    .greeting { font-size:12px;color:var(--text2); }
+    .greeting strong { font-family:var(--font-d);font-size:17px;color:var(--text);display:block; }
+    .settings-btn { background:var(--bg2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:16px; }
+
+    /* MONTH SELECTOR */
+    .month-sel { display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px; }
+    .mnav { background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 8px;line-height:1;font-family:var(--font-d); }
+    .mdisp { font-family:var(--font-d);font-size:15px;font-weight:600;color:var(--text); }
+
+    /* SUMMARY GRID */
+    .sum-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px; }
+    .sum-card { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px; }
+    .sum-card .lbl { font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.06em; }
+    .sum-card .amt { font-family:var(--font-d);font-size:20px;font-weight:800;margin-top:4px; }
+    .sum-card .sub { font-size:11px;color:var(--text3);margin-top:2px; }
+    .income-card .amt { color:var(--green); }
+    .spent-card .amt { color:var(--red); }
+    .saved-card { grid-column:span 2; }
+    .saved-card .amt { color:var(--gold); }
+    .sbar { height:6px;background:rgba(255,255,255,.05);border-radius:3px;margin-top:10px;overflow:hidden; }
+    .sbar-fill { height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;transition:width .6s ease; }
+
+    /* HEALTH RING */
+    .health-row { display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px; }
+    .hring { position:relative;width:70px;height:70px;flex-shrink:0; }
+    .hring svg { width:70px;height:70px;transform:rotate(-90deg); }
+    .hring-ctr { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-d);font-size:16px;font-weight:800; }
+    .hinfo .ht { font-family:var(--font-d);font-size:14px;font-weight:700;margin-bottom:3px; }
+    .hinfo .hd { font-size:12px;color:var(--text2);line-height:1.4; }
+
+    /* CATEGORIES */
+    .cat-item { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:8px; }
+    .cat-hdr { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
+    .cat-l { display:flex;align-items:center;gap:10px; }
+    .cat-ico { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0; }
+    .cat-name { font-size:14px;font-weight:600;color:var(--text); }
+    .cat-amts { font-size:11px;color:var(--text2);margin-top:1px; }
+    .cat-r { text-align:right; }
+    .cat-pct { font-family:var(--font-d);font-size:16px;font-weight:700; }
+    .cat-status { font-size:10px;color:var(--text2); }
+    .cat-bar { height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden; }
+    .cat-fill { height:100%;border-radius:3px;transition:width .6s ease; }
+
+    /* GOALS */
+    .goal-card { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:10px;position:relative;overflow:hidden; }
+    .goal-hdr { display:flex;align-items:flex-start;gap:12px;margin-bottom:14px; }
+    .goal-emoji { font-size:32px;line-height:1; }
+    .goal-info { flex:1; }
+    .goal-name { font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--text); }
+    .goal-dead { font-size:12px;color:var(--text2);margin-top:2px; }
+    .gring { position:relative;width:58px;height:58px;flex-shrink:0; }
+    .gring svg { width:58px;height:58px;transform:rotate(-90deg); }
+    .ring-bg { fill:none;stroke:rgba(255,255,255,.05);stroke-width:4; }
+    .ring-fill { fill:none;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .8s ease; }
+    .ring-pct { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-d);font-size:11px;font-weight:700; }
+    .goal-amts { display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px; }
+    .goal-curr { font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--text); }
+    .goal-tgt { font-size:11px;color:var(--text2);margin-top:2px; }
+    .gbar { height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;margin-bottom:12px; }
+    .gbar-fill { height:100%;border-radius:3px;transition:width .8s ease; }
+    .goal-acts { display:flex;gap:8px; }
+
+    /* ACHIEVEMENTS */
+    .badges-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px; }
+    .badge-card { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 10px;text-align:center;transition:all .3s; }
+    .badge-card.earned { border-color:rgba(244,185,66,.25);background:linear-gradient(135deg,rgba(244,185,66,.06),var(--bg2)); }
+    .badge-card.locked { filter:grayscale(.8);opacity:.45; }
+    .badge-em { font-size:28px;margin-bottom:6px;display:block; }
+    .badge-nm { font-size:11px;font-weight:600;color:var(--text);line-height:1.3; }
+    .badge-ds { font-size:9px;color:var(--text3);margin-top:2px;line-height:1.3; }
+    .badge-xp { font-size:10px;color:var(--gold);margin-top:4px;font-weight:600; }
+
+    /* ANALYTICS */
+    .chart-wrap { display:flex;justify-content:center;margin:16px 0;position:relative; }
+    .chart-wrap svg { width:190px;height:190px; }
+    .ring-ctr { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center; }
+    .ring-ctr .big { font-family:var(--font-d);font-size:30px;font-weight:800;color:var(--text); }
+    .ring-ctr .sm { font-size:11px;color:var(--text2); }
+    .leg-item { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border); }
+    .leg-item:last-child { border-bottom:none; }
+    .leg-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+    .leg-label { flex:1;font-size:13px;color:var(--text); }
+    .leg-amt { font-family:var(--font-d);font-size:14px;font-weight:600; }
+    .leg-pct { font-size:11px;color:var(--text2);margin-left:4px; }
+
+    /* TRANSACTIONS */
+    .txn-item { display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border); }
+    .txn-item:last-child { border-bottom:none; }
+    .txn-ico { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0; }
+    .txn-info { flex:1; }
+    .txn-nm { font-size:14px;font-weight:600;color:var(--text); }
+    .txn-meta { font-size:11px;color:var(--text2);margin-top:1px; }
+    .txn-amt { font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--red); }
+
+    /* NET WORTH */
+    .nw-bar { height:12px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden;display:flex;margin:10px 0; }
+    .nw-a { background:var(--green);transition:width .6s; }
+    .nw-l { background:var(--red);transition:width .6s; }
+
+    /* YEAR TABS */
+    .yr-tabs { display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;margin-bottom:16px; }
+    .yr-tab { flex:1;padding:8px;text-align:center;border-radius:8px;border:none;background:none;font-family:var(--font-b);font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s; }
+    .yr-tab.active { background:var(--bg3);color:var(--gold); }
+
+    /* STREAK */
+    .streak-badge { display:inline-flex;align-items:center;gap:4px;background:rgba(255,100,0,.12);border:1px solid rgba(255,100,0,.25);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;color:#FF6400; }
+
+    /* SECTION HEADER */
+    .sec-hdr { display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
+    .sec-hdr h3 { margin-bottom:0; }
+
+    /* BUTTONS */
+    .btn-p { background:linear-gradient(135deg,var(--gold),#D4941C);color:#000;border:none;border-radius:12px;padding:13px 20px;font-family:var(--font-b);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;width:100%; }
+    .btn-p:active { transform:scale(.97);opacity:.9; }
+    .btn-s { background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;flex:1; }
+    .btn-s:active { transform:scale(.97); }
+    .btn-a { background:rgba(244,185,66,.1);color:var(--gold);border:1px solid rgba(244,185,66,.2);border-radius:10px;padding:11px 16px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;flex:1; }
+    .btn-a:active { transform:scale(.97); }
+    .btn-d { background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.2);border-radius:10px;padding:9px 14px;font-family:var(--font-b);font-size:12px;font-weight:600;cursor:pointer; }
+
+    /* FAB */
+    .fab { position:fixed;bottom:calc(80px + var(--safe-b));right:16px;width:54px;height:54px;background:linear-gradient(135deg,var(--gold),#D4941C);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;color:#000;cursor:pointer;box-shadow:0 4px 24px rgba(244,185,66,.45);transition:all .2s;z-index:50; }
+    .fab:active { transform:scale(.93); }
+
+    /* MODAL */
+    .mo { position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s; }
+    .mo.open { opacity:1;pointer-events:all; }
+    .modal { background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:20px 20px calc(20px + var(--safe-b));width:100%;max-width:500px;transform:translateY(100%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);max-height:92dvh;overflow-y:auto; }
+    .mo.open .modal { transform:translateY(0); }
+    .modal-handle { width:36px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:0 auto 16px; }
+    .modal-title { font-family:var(--font-d);font-size:18px;font-weight:700;margin-bottom:16px;color:var(--text); }
+
+    /* INPUTS */
+    .ig { margin-bottom:14px; }
+    .il { font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block; }
+    input[type=text],input[type=number],select,textarea { width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-family:var(--font-b);font-size:15px;color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none; }
+    input:focus,select:focus { border-color:rgba(244,185,66,.4); }
+    select option { background:var(--bg2); }
+
+    /* TOAST */
+    .toast-wrap { position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none; }
+    .toast { background:var(--bg2);border:1px solid rgba(244,185,66,.3);border-radius:40px;padding:10px 20px;font-size:13px;font-weight:600;color:var(--text);box-shadow:0 4px 24px rgba(0,0,0,.6);animation:tIn .3s ease,tOut .3s ease 2.5s forwards;white-space:nowrap; }
+    @keyframes tIn { from{opacity:0;transform:translateY(-8px) scale(.9)} to{opacity:1;transform:translateY(0) scale(1)} }
+    @keyframes tOut { from{opacity:1} to{opacity:0;transform:translateY(-8px) scale(.9)} }
+
+    /* XP POP */
+    .xp-pop { position:fixed;font-family:var(--font-d);font-size:18px;font-weight:800;color:var(--gold);pointer-events:none;z-index:300;text-shadow:0 0 20px rgba(244,185,66,.5);animation:xpF 1.2s ease forwards; }
+    @keyframes xpF { 0%{opacity:1;transform:translateY(0) scale(1)} 50%{opacity:1;transform:translateY(-30px) scale(1.1)} 100%{opacity:0;transform:translateY(-60px) scale(.9)} }
+
+    /* EMPTY */
+    .empty { text-align:center;padding:30px 20px;color:var(--text3); }
+    .empty .ei { font-size:38px;margin-bottom:10px; }
+    .empty p { font-size:13px;line-height:1.6; }
+
+    /* CAT COLORS */
+    .cc-housing{background:rgba(78,159,255,.15)} .cc-food{background:rgba(255,77,109,.15)} .cc-transport{background:rgba(155,109,255,.15)}
+    .cc-entertainment{background:rgba(255,179,0,.15)} .cc-health{background:rgba(0,214,143,.15)} .cc-shopping{background:rgba(255,128,0,.15)}
+    .cc-savings{background:rgba(244,185,66,.15)} .cc-emi{background:rgba(155,109,255,.15)} .cc-other{background:rgba(136,150,167,.15)}
+
+    /* EMOJI PICKER */
+    .ep-btn { font-size:22px;background:var(--bg3);border:2px solid transparent;border-radius:8px;padding:6px 8px;cursor:pointer;transition:all .15s; }
+    .ep-btn.sel { border-color:var(--gold); }
+
+    /* LEVEL ROADMAP */
+    .lv-item { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border); }
+    .lv-item:last-child{border-bottom:none}
+    .lv-ball { width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0; }
+
+    /* RATIO CARDS */
+    .ratio-card { display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px; }
+
+    /* TREND BARS */
+    .trend-wrap { display:flex;align-items:flex-end;gap:6px;height:100px;padding:0 4px; }
+    .trend-col { flex:1;display:flex;flex-direction:column;align-items:center;gap:3px; }
+    .trend-bar { width:100%;border-radius:4px 4px 0 0;transition:height .6s ease; }
+    .trend-lbl { font-size:9px;color:var(--text3); }
+
+    ::-webkit-scrollbar{display:none} *{scrollbar-width:none}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="toast-wrap" id="toasts"></div>
+
+  <div id="main">
+
+    <!-- ============ HOME ============ -->
+    <div class="panel active" id="panel-home">
+      <div id="home-hdr">
+        <div class="greeting">
+          <span id="greet">Good morning</span>
+          <strong id="pname-hdr">Wealth Seeker</strong>
+        </div>
+        <button class="settings-btn" onclick="openModal('nameModal')">⚙️</button>
+      </div>
+
+      <!-- Player Card -->
+      <div class="player-card">
+        <div class="ph">
+          <div class="avatar">💰</div>
+          <div style="flex:1">
+            <div class="pname" id="pc-name">Wealth Seeker</div>
+            <div class="lvl-badge">⭐ <span id="pc-title">Penny Padawan</span> · Lv<span id="pc-lv">1</span></div>
+            <div style="margin-top:6px" id="streak-disp"></div>
+          </div>
+        </div>
+        <div class="xp-lbl"><span>XP Progress</span><span><span id="xp-cur">0</span> / <span id="xp-nxt">100</span></span></div>
+        <div class="xp-bar"><div class="xp-fill" id="xp-fill1" style="width:0%"></div></div>
+        <div class="pstats">
+          <div class="stat-chip"><div class="sv" id="st-goals">0</div><div class="sl">Goals</div></div>
+          <div class="stat-chip"><div class="sv" id="st-badges">0</div><div class="sl">Badges</div></div>
+          <div class="stat-chip"><div class="sv" id="st-streak">0</div><div class="sl">🔥 Streak</div></div>
+        </div>
+      </div>
+
+      <!-- Month Selector -->
+      <div class="month-sel">
+        <button class="mnav" onclick="changeMonth(-1)">‹</button>
+        <div class="mdisp" id="m-disp">April 2025</div>
+        <button class="mnav" onclick="changeMonth(1)">›</button>
+      </div>
+
+      <!-- Summary -->
+      <div class="sum-grid">
+        <div class="sum-card income-card"><div class="lbl">Income</div><div class="amt" id="h-income">₹0</div><div class="sub" id="h-inc-src">Not set</div></div>
+        <div class="sum-card spent-card"><div class="lbl">Spent</div><div class="amt" id="h-spent">₹0</div><div class="sub" id="h-txn-ct">0 expenses</div></div>
+        <div class="sum-card saved-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div><div class="lbl">Saved This Month</div><div class="amt" id="h-saved">₹0</div></div>
+            <div style="text-align:right;margin-top:2px"><div class="lbl">Remaining Budget</div><div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--blue)" id="h-remain">₹0</div></div>
+          </div>
+          <div class="sbar"><div class="sbar-fill" id="sbar-fill" style="width:0%"></div></div>
+          <div class="sub" id="h-rate">0% savings rate</div>
+        </div>
+      </div>
+
+      <!-- Health Score -->
+      <div class="health-row">
+        <div class="hring">
+          <svg viewBox="0 0 70 70">
+            <circle cx="35" cy="35" r="29" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="6"/>
+            <circle id="h-ring" cx="35" cy="35" r="29" fill="none" stroke="var(--green)" stroke-width="6" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="182.2"/>
+          </svg>
+          <div class="hring-ctr" id="h-score" style="color:var(--green)">0</div>
+        </div>
+        <div class="hinfo">
+          <div class="ht" id="h-title">Set Your Budget</div>
+          <div class="hd" id="h-desc">Add income and category budgets to see your financial health score.</div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="sec-hdr">
+        <h3>Recent Expenses</h3>
+        <span style="font-size:11px;color:var(--gold);cursor:pointer" onclick="switchTab('budget')">See all →</span>
+      </div>
+      <div class="card" id="recent-txns">
+        <div class="empty"><div class="ei">📋</div><p>No expenses yet.<br>Tap + to log one.</p></div>
+      </div>
+    </div>
+
+    <!-- ============ BUDGET ============ -->
+    <div class="panel" id="panel-budget">
+      <div class="page-title">Budget</div>
+      <div class="page-sub" id="b-sub">Set limits, track every rupee</div>
+
+      <div class="sec-hdr"><h3>Monthly Income</h3></div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-size:12px;color:var(--text2)">Total earnings this month</div>
+            <div id="b-income" style="font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--green)">₹0</div>
+          </div>
+          <button class="btn-a" style="flex:0;padding:10px 18px" onclick="openIncomeModal()">Edit</button>
+        </div>
+        <div id="b-inc-note" style="font-size:12px;color:var(--text2)">Tap Edit to set income for this month</div>
+      </div>
+
+      <div class="sec-hdr"><h3>Categories</h3><span id="b-overall" style="font-size:11px;color:var(--text2)"></span></div>
+      <div id="cat-list"></div>
+
+      <div class="sec-hdr" style="margin-top:10px"><h3>Transactions</h3><span id="txn-count" style="font-size:11px;color:var(--text2)"></span></div>
+      <div class="card" id="full-txns">
+        <div class="empty"><div class="ei">📊</div><p>No expenses logged yet</p></div>
+      </div>
+    </div>
+
+    <!-- ============ GOALS ============ -->
+    <div class="panel" id="panel-goals">
+      <div class="page-title">Goals</div>
+      <div class="page-sub">Your financial milestones</div>
+
+      <div class="yr-tabs">
+        <button class="yr-tab active" onclick="switchGoalYear(2025,this)">2025</button>
+        <button class="yr-tab" onclick="switchGoalYear(2026,this)">2026</button>
+        <button class="yr-tab" onclick="switchGoalYear('all',this)">All</button>
+      </div>
+
+      <div class="sum-grid" style="margin-bottom:16px">
+        <div class="sum-card"><div class="lbl">Total Target</div><div class="amt" id="g-total" style="color:var(--blue);font-size:18px">₹0</div></div>
+        <div class="sum-card"><div class="lbl">Saved Toward</div><div class="amt" id="g-saved" style="color:var(--green);font-size:18px">₹0</div></div>
+      </div>
+
+      <div id="goals-list"></div>
+      <button class="btn-p" onclick="openAddGoalModal()" style="margin-top:6px">＋ New Goal</button>
+    </div>
+
+    <!-- ============ ANALYTICS ============ -->
+    <div class="panel" id="panel-analytics">
+      <div class="page-title">Analytics</div>
+      <div class="page-sub">Your financial snapshot</div>
+
+      <h3>Spending Breakdown</h3>
+      <div class="card">
+        <div class="chart-wrap">
+          <svg viewBox="0 0 190 190" id="donut-svg">
+            <circle cx="95" cy="95" r="75" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="20"/>
+          </svg>
+          <div class="ring-ctr"><div class="big" id="a-rate">0%</div><div class="sm">saved</div></div>
+        </div>
+        <div id="donut-legend"></div>
+      </div>
+
+      <h3 style="margin-top:16px">Monthly Trend</h3>
+      <div class="card" id="trend-card">
+        <div class="empty"><div class="ei">📈</div><p>Log income in 2+ months<br>to see your trend</p></div>
+      </div>
+
+      <h3 style="margin-top:16px">Net Worth Tracker</h3>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div>
+            <div style="font-size:12px;color:var(--text2)">Net Worth</div>
+            <div id="nw-disp" style="font-family:var(--font-d);font-size:26px;font-weight:800;color:var(--green)">₹0</div>
+          </div>
+          <button class="btn-s" style="flex:0;padding:9px 14px;font-size:12px" onclick="openModal('nwModal')">Update</button>
+        </div>
+        <div class="nw-bar"><div class="nw-a" id="nw-a-bar" style="width:50%"></div><div class="nw-l" id="nw-l-bar" style="width:50%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:4px">
+          <span>💚 Assets: <span id="nw-assets">₹0</span></span>
+          <span>🔴 Liabilities: <span id="nw-liab">₹0</span></span>
+        </div>
+      </div>
+
+      <h3 style="margin-top:16px">Financial Ratios</h3>
+      <div id="ratio-cards"></div>
+    </div>
+
+    <!-- ============ ACHIEVEMENTS ============ -->
+    <div class="panel" id="panel-achievements">
+      <div class="page-title">Achievements</div>
+      <div class="page-sub" id="ach-sub">Earn XP to level up your finances</div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-size:12px;color:var(--text2)">Total XP</div><div id="a-xp" style="font-family:var(--font-d);font-size:34px;font-weight:800;color:var(--gold)">0</div></div>
+          <div style="text-align:right"><div style="font-size:12px;color:var(--text2)">Level</div><div id="a-lv" style="font-family:var(--font-d);font-size:34px;font-weight:800;color:var(--text)">1</div></div>
+        </div>
+        <div class="xp-bar" style="margin-top:12px"><div class="xp-fill" id="xp-fill2" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px">
+          <span id="a-xp-cur">0 XP</span><span id="a-xp-nxt">Next: 100 XP</span>
+        </div>
+      </div>
+
+      <h3>Level Roadmap</h3>
+      <div class="card" style="margin-bottom:16px" id="lv-roadmap"></div>
+
+      <h3>Badges</h3>
+      <div class="badges-grid" id="badges-grid"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="switchTab('home')" id="nav-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('budget')" id="nav-budget">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+      <span>Budget</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('goals')" id="nav-goals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      <span>Goals</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('analytics')" id="nav-analytics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Analytics</span>
+    </button>
+    <button class="nav-btn" onclick="switchTab('achievements')" id="nav-achievements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+      <span>Achieve</span>
+      <div class="nav-dot" id="ach-dot"></div>
+    </button>
+  </nav>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="main-fab" onclick="openAddExpenseModal()">＋</button>
+
+<!-- ====== MODALS ====== -->
+
+<!-- Add Expense -->
+<div class="mo" id="expModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add Expense</div>
+    <div class="ig"><label class="il">Amount (₹)</label><input type="number" id="exp-amt" placeholder="0" inputmode="decimal"></div>
+    <div class="ig"><label class="il">Category</label>
+      <select id="exp-cat">
+        <option value="housing">🏠 Housing & Rent</option>
+        <option value="food">🍔 Food & Dining</option>
+        <option value="transport">🚗 Transport</option>
+        <option value="entertainment">🎬 Entertainment</option>
+        <option value="health">💊 Health & Fitness</option>
+        <option value="shopping">🛍️ Shopping</option>
+        <option value="emi">💳 EMI / Loan Payment</option>
+        <option value="savings">💰 Savings Transfer</option>
+        <option value="other">📦 Other</option>
+      </select>
+    </div>
+    <div class="ig"><label class="il">Note (optional)</label><input type="text" id="exp-note" placeholder="What was it for?"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-s" onclick="closeModal('expModal')">Cancel</button>
+      <button class="btn-p" onclick="addExpense()" style="flex:2">Add Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- Income Modal -->
+<div class="mo" id="incomeModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Set Monthly Income</div>
+    <div class="ig"><label class="il">Total Income (₹)</label><input type="number" id="inc-amt" placeholder="0" inputmode="decimal"></div>
+    <div class="ig"><label class="il">Source / Notes</label><input type="text" id="inc-note" placeholder="Salary, freelance, business..."></div>
+    <div style="margin-bottom:14px">
+      <label class="il" style="margin-bottom:10px;display:block">Category Budgets (₹) — optional</label>
+      <div id="bud-inputs" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-s" onclick="closeModal('incomeModal')">Cancel</button>
+      <button class="btn-p" onclick="saveIncome()" style="flex:2">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Goal -->
+<div class="mo" id="goalModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">New Financial Goal</div>
+    <div class="ig"><label class="il">Goal Name</label><input type="text" id="g-name" placeholder="Emergency Fund, Dream Vacation..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="ig"><label class="il">Target (₹)</label><input type="number" id="g-target" placeholder="100000" inputmode="decimal"></div>
+      <div class="ig"><label class="il">Saved So Far (₹)</label><input type="number" id="g-curr" placeholder="0" inputmode="decimal"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="ig"><label class="il">Year</label><select id="g-year"><option value="2025">2025</option><option value="2026">2026</option></select></div>
+      <div class="ig"><label class="il">Deadline</label><input type="text" id="g-dead" placeholder="Dec 2025"></div>
+    </div>
+    <div class="ig">
+      <label class="il">Pick Emoji</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="ep"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-s" onclick="closeModal('goalModal')">Cancel</button>
+      <button class="btn-p" onclick="saveGoal()" style="flex:2">Create Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contribute Modal -->
+<div class="mo" id="contModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="cont-title">Add Funds</div>
+    <div class="ig"><label class="il">Amount (₹)</label><input type="number" id="cont-amt" placeholder="0" inputmode="decimal"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-s" onclick="closeModal('contModal')">Cancel</button>
+      <button class="btn-p" onclick="saveContrib()" style="flex:2">Add Funds</button>
+    </div>
+  </div>
+</div>
+
+<!-- Net Worth Modal -->
+<div class="mo" id="nwModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Update Net Worth</div>
+    <div class="ig"><label class="il">Total Assets (₹)</label><input type="number" id="nw-a-inp" placeholder="Savings, investments, property..." inputmode="decimal"></div>
+    <div class="ig"><label class="il">Total Liabilities (₹)</label><input type="number" id="nw-l-inp" placeholder="Loans, credit card debt..." inputmode="decimal"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-s" onclick="closeModal('nwModal')">Cancel</button>
+      <button class="btn-p" onclick="saveNW()" style="flex:2">Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="mo" id="nameModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Settings</div>
+    <div class="ig"><label class="il">Your Name</label><input type="text" id="s-name" placeholder="Enter your name"></div>
+    <div class="ig">
+      <label class="il">Currency</label>
+      <select id="s-curr">
+        <option value="₹">₹ Indian Rupee (INR)</option>
+        <option value="$">$ US Dollar (USD)</option>
+        <option value="€">€ Euro (EUR)</option>
+        <option value="£">£ British Pound (GBP)</option>
+        <option value="AED">AED Dirham</option>
+        <option value="¥">¥ Japanese Yen</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn-d" onclick="confirmReset()">🗑️ Reset All</button>
+      <button class="btn-s" onclick="closeModal('nameModal')">Cancel</button>
+      <button class="btn-p" onclick="saveSettings()" style="flex:2">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==============================
+// CONSTANTS
+// ==============================
+const LEVELS=[
+  {level:1,title:"Penny Padawan",xp:0,emoji:"🌱"},
+  {level:2,title:"Budget Novice",xp:100,emoji:"📊"},
+  {level:3,title:"Finance Apprentice",xp:300,emoji:"💼"},
+  {level:4,title:"Wealth Builder",xp:600,emoji:"🏗️"},
+  {level:5,title:"Money Master",xp:1000,emoji:"💎"},
+  {level:6,title:"Investment Guru",xp:1500,emoji:"📈"},
+  {level:7,title:"Financial Legend",xp:2500,emoji:"🏆"},
+];
+
+const CATS=[
+  {id:"housing",name:"Housing & Rent",emoji:"🏠",cls:"cc-housing",color:"#4E9FFF"},
+  {id:"food",name:"Food & Dining",emoji:"🍔",cls:"cc-food",color:"#FF4D6D"},
+  {id:"transport",name:"Transport",emoji:"🚗",cls:"cc-transport",color:"#9B6DFF"},
+  {id:"entertainment",name:"Entertainment",emoji:"🎬",cls:"cc-entertainment",color:"#FFB300"},
+  {id:"health",name:"Health & Fitness",emoji:"💊",cls:"cc-health",color:"#00D68F"},
+  {id:"shopping",name:"Shopping",emoji:"🛍️",cls:"cc-shopping",color:"#FF8000"},
+  {id:"emi",name:"EMI / Loans",emoji:"💳",cls:"cc-emi",color:"#9B6DFF"},
+  {id:"savings",name:"Savings Transfer",emoji:"💰",cls:"cc-savings",color:"#F4B942"},
+  {id:"other",name:"Other",emoji:"📦",cls:"cc-other",color:"#8896A7"},
+];
+
+const BADGES=[
+  {id:"first_income",emoji:"🌱",name:"First Steps",desc:"Log your first income",xp:50},
+  {id:"all_budgets",emoji:"📊",name:"Budget Boss",desc:"Set budgets for all categories",xp:75},
+  {id:"under_budget",emoji:"💚",name:"In the Green",desc:"Finish a month under total budget",xp:50},
+  {id:"first_goal",emoji:"🎯",name:"Goal Setter",desc:"Create your first goal",xp:30},
+  {id:"goal_complete",emoji:"🏆",name:"Goal Crusher",desc:"Complete a financial goal",xp:100},
+  {id:"streak_3",emoji:"🔥",name:"On Fire",desc:"Log income 3 months in a row",xp:75},
+  {id:"saver_30",emoji:"💎",name:"Diamond Saver",desc:"Save 30%+ of income in a month",xp:80},
+  {id:"level_5",emoji:"🚀",name:"Rocket Launch",desc:"Reach Level 5",xp:0},
+  {id:"multi_goal",emoji:"🌟",name:"Dream Big",desc:"Have 3+ active goals",xp:40},
+  {id:"positive_nw",emoji:"📈",name:"Wealth Accumulator",desc:"Achieve positive net worth",xp:60},
+  {id:"txn_50",emoji:"📋",name:"Diligent Tracker",desc:"Log 50+ total transactions",xp:50},
+  {id:"no_overspend",emoji:"🛡️",name:"Budget Shield",desc:"No category overspends in a month",xp:60},
+  {id:"full_year",emoji:"📅",name:"Full Year Planner",desc:"Set goals for both 2025 & 2026",xp:40},
+  {id:"saver_50",emoji:"👑",name:"Half & Half",desc:"Save 50%+ of income in a month",xp:100},
+];
+
+const EMOJIS=['🏠','🚗','✈️','💎','📱','🎓','💍','🏖️','🏥','💼','🎸','🌍','🛡️','📈','💰','🏋️','🎯','🌟','🚀','👶','🎮','🐕','🌿','⌚'];
+
+// ==============================
+// STATE
+// ==============================
+const emptyMonth=()=>({
+  income:0,incomeSource:"",
+  categories:Object.fromEntries(CATS.map(c=>[c.id,{budget:0,spent:0}])),
+  transactions:[],
+});
+
+const emptyState=()=>({
+  player:{name:"Wealth Seeker",level:1,xp:0,streak:0,lastMonth:null,currency:"₹"},
+  months:{},
+  goals:[],
+  badges:[],
+  netWorth:{assets:0,liabilities:0},
+  totalTxns:0,
+});
+
+let S=emptyState();
+let curMonth=nowKey();
+let goalYear=2025;
+let contGoalId=null;
+let pickEmoji="🎯";
+
+function nowKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function md(key=curMonth){
+  if(!S.months[key])S.months[key]=emptyMonth();
+  return S.months[key];
+}
+
+// ==============================
+// STORAGE
+// ==============================
+function save(){try{localStorage.setItem('wq_v2',JSON.stringify(S));}catch(e){}}
+function load(){try{const r=localStorage.getItem('wq_v2');if(r){const p=JSON.parse(r);S={...emptyState(),...p,player:{...emptyState().player,...p.player},netWorth:{...emptyState().netWorth,...p.netWorth}};}}catch(e){S=emptyState();}}
+
+// ==============================
+// FORMATTING
+// ==============================
+const C=()=>S.player.currency||"₹";
+function fmt(n){
+  const v=Math.abs(n||0);
+  const s=v>=10000000?(v/10000000).toFixed(1)+'Cr':v>=100000?(v/100000).toFixed(1)+'L':v>=1000?(v/1000).toFixed(1)+'K':Math.round(v).toLocaleString('en-IN');
+  return (n<0?'-':'')+C()+s;
+}
+function fmtF(n){return C()+Math.round(n||0).toLocaleString('en-IN');}
+
+// ==============================
+// XP & LEVELS
+// ==============================
+function addXP(amt,fromBadge=false){
+  S.player.xp+=amt;
+  checkLevelUp();
+  save();
+  updatePlayer();
+  if(!fromBadge)showXPPop(amt);
+}
+
+function checkLevelUp(){
+  let nl=1;
+  for(const lv of LEVELS)if(S.player.xp>=lv.xp)nl=lv.level;
+  if(nl>S.player.level){
+    S.player.level=nl;
+    const ldata=LEVELS.find(l=>l.level===nl);
+    toast(`🎉 Level Up! You are now ${ldata.title}!`);
+    checkBadge('level_5');
+  }
+}
+
+function levelData(){
+  let cur=LEVELS[0],nxt=LEVELS[1];
+  for(let i=0;i<LEVELS.length;i++){
+    if(S.player.xp>=LEVELS[i].xp){cur=LEVELS[i];nxt=LEVELS[i+1]||null;}
+  }
+  return{cur,nxt};
+}
+
+function xpPct(){
+  const{cur,nxt}=levelData();
+  if(!nxt)return 100;
+  return Math.min(100,((S.player.xp-cur.xp)/(nxt.xp-cur.xp))*100);
+}
+
+// ==============================
+// BADGES
+// ==============================
+function checkBadge(id){
+  if(S.badges.includes(id))return;
+  const badge=BADGES.find(b=>b.id===id);
+  if(!badge)return;
+  const mdata=md();
+  const totalSpent=CATS.reduce((s,c)=>s+mdata.categories[c.id].spent,0);
+  const saveRate=mdata.income>0?(mdata.income-totalSpent)/mdata.income:0;
+  let earned=false;
+  switch(id){
+    case'first_income':earned=mdata.income>0;break;
+    case'all_budgets':earned=CATS.every(c=>mdata.categories[c.id].budget>0);break;
+    case'under_budget':{const tb=CATS.reduce((s,c)=>s+mdata.categories[c.id].budget,0);earned=tb>0&&totalSpent<=tb;break;}
+    case'first_goal':earned=S.goals.length>=1;break;
+    case'goal_complete':earned=S.goals.some(g=>g.current>=g.target);break;
+    case'streak_3':earned=S.player.streak>=3;break;
+    case'saver_30':earned=mdata.income>0&&saveRate>=0.3;break;
+    case'saver_50':earned=mdata.income>0&&saveRate>=0.5;break;
+    case'level_5':earned=S.player.level>=5;break;
+    case'multi_goal':earned=S.goals.length>=3;break;
+    case'positive_nw':earned=(S.netWorth.assets-S.netWorth.liabilities)>0;break;
+    case'txn_50':earned=S.totalTxns>=50;break;
+    case'no_overspend':earned=CATS.every(c=>{const cat=mdata.categories[c.id];return cat.budget===0||cat.spent<=cat.budget;});break;
+    case'full_year':earned=S.goals.some(g=>g.year===2025)&&S.goals.some(g=>g.year===2026);break;
+  }
+  if(earned){
+    S.badges.push(id);
+    save();
+    toast(`🏅 Badge Unlocked: ${badge.name}!`);
+    if(badge.xp>0)addXP(badge.xp,true);
+    document.getElementById('ach-dot').classList.add('show');
+  }
+}
+
+function checkAll(){BADGES.forEach(b=>checkBadge(b.id));}
+
+// ==============================
+// NAVIGATION
+// ==============================
+function switchTab(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
+  document.getElementById('main-fab').style.display=(name==='home'||name==='budget')?'flex':'none';
+  if(name==='achievements')document.getElementById('ach-dot').classList.remove('show');
+  renderAll();
+}
+
+// ==============================
+// MONTH NAVIGATION
+// ==============================
+function changeMonth(d){
+  const[y,m]=curMonth.split('-').map(Number);
+  const dt=new Date(y,m-1+d,1);
+  curMonth=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+  renderAll();
+}
+
+function monthName(key){
+  const[y,m]=key.split('-').map(Number);
+  return['January','February','March','April','May','June','July','August','September','October','November','December'][m-1]+' '+y;
+}
+
+// ==============================
+// INCOME
+// ==============================
+function openIncomeModal(){
+  const mdata=md();
+  document.getElementById('inc-amt').value=mdata.income||'';
+  document.getElementById('inc-note').value=mdata.incomeSource||'';
+  const grid=document.getElementById('bud-inputs');
+  grid.innerHTML=CATS.map(c=>`
+    <div>
+      <label class="il" style="font-size:10px">${c.emoji} ${c.name.split(' ')[0]}</label>
+      <input type="number" id="b_${c.id}" placeholder="0" value="${mdata.categories[c.id].budget||''}" inputmode="decimal" style="padding:9px 10px;font-size:13px">
+    </div>`).join('');
+  openModal('incomeModal');
+}
+
+function saveIncome(){
+  const amt=parseFloat(document.getElementById('inc-amt').value)||0;
+  const note=document.getElementById('inc-note').value;
+  const mdata=md();
+  const isFirst=mdata.income===0;
+  mdata.income=amt;
+  mdata.incomeSource=note;
+  CATS.forEach(c=>{mdata.categories[c.id].budget=parseFloat(document.getElementById(`b_${c.id}`)?.value)||0;});
+  // Streak
+  const mk=nowKey();
+  if(mk===curMonth&&S.player.lastMonth!==mk){
+    S.player.streak=S.player.lastMonth?S.player.streak+1:1;
+    S.player.lastMonth=mk;
+    addXP(isFirst?50:25);
+  }
+  save();closeModal('incomeModal');checkAll();renderAll();toast("✅ Income saved!");
+}
+
+// ==============================
+// EXPENSES
+// ==============================
+function openAddExpenseModal(){
+  document.getElementById('exp-amt').value='';
+  document.getElementById('exp-note').value='';
+  openModal('expModal');
+}
+
+function addExpense(){
+  const amt=parseFloat(document.getElementById('exp-amt').value)||0;
+  const cat=document.getElementById('exp-cat').value;
+  const note=document.getElementById('exp-note').value;
+  if(!amt){toast("⚠️ Enter an amount");return;}
+  const mdata=md();
+  mdata.transactions.unshift({id:Date.now(),amount:amt,category:cat,note:note||CATS.find(c=>c.id===cat)?.name,date:new Date().toISOString()});
+  mdata.categories[cat].spent+=amt;
+  S.totalTxns++;
+  addXP(5);save();closeModal('expModal');checkAll();renderAll();toast("💸 Expense logged!");
+}
+
+function deleteTxn(id){
+  const mdata=md();
+  const idx=mdata.transactions.findIndex(t=>t.id===id);
+  if(idx===-1)return;
+  const t=mdata.transactions[idx];
+  mdata.categories[t.category].spent=Math.max(0,mdata.categories[t.category].spent-t.amount);
+  mdata.transactions.splice(idx,1);
+  S.totalTxns=Math.max(0,S.totalTxns-1);
+  save();renderAll();toast("🗑️ Deleted");
+}
+
+// ==============================
+// GOALS
+// ==============================
+function openAddGoalModal(){
+  document.getElementById('g-name').value='';
+  document.getElementById('g-target').value='';
+  document.getElementById('g-curr').value='';
+  document.getElementById('g-dead').value='';
+  pickEmoji='🎯';
+  document.getElementById('ep').innerHTML=EMOJIS.map(e=>`<button class="ep-btn${e===pickEmoji?' sel':''}" onclick="selEmoji('${e}',this)">${e}</button>`).join('');
+  openModal('goalModal');
+}
+
+function selEmoji(e,btn){
+  pickEmoji=e;
+  document.querySelectorAll('.ep-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function saveGoal(){
+  const name=document.getElementById('g-name').value.trim();
+  const target=parseFloat(document.getElementById('g-target').value)||0;
+  const curr=parseFloat(document.getElementById('g-curr').value)||0;
+  const year=parseInt(document.getElementById('g-year').value);
+  const dead=document.getElementById('g-dead').value;
+  if(!name||!target){toast("⚠️ Name and target required");return;}
+  const colors=['#4E9FFF','#FF4D6D','#9B6DFF','#FFB300','#00D68F','#FF8000','#F4B942'];
+  S.goals.push({id:Date.now(),name,target,current:curr,year,deadline:dead,emoji:pickEmoji,color:colors[S.goals.length%colors.length],created:new Date().toISOString()});
+  addXP(30);save();closeModal('goalModal');checkBadge('first_goal');checkBadge('multi_goal');checkBadge('full_year');renderAll();toast("🎯 Goal created!");
+}
+
+function openContrib(id){
+  contGoalId=id;
+  const g=S.goals.find(x=>x.id===id);
+  document.getElementById('cont-title').textContent=`Add to: ${g.name}`;
+  document.getElementById('cont-amt').value='';
+  openModal('contModal');
+}
+
+function saveContrib(){
+  const amt=parseFloat(document.getElementById('cont-amt').value)||0;
+  if(!amt){toast("⚠️ Enter an amount");return;}
+  const g=S.goals.find(x=>x.id===contGoalId);
+  if(!g)return;
+  g.current=Math.min(g.target,g.current+amt);
+  if(g.current>=g.target){toast(`🎉 GOAL ACHIEVED: ${g.name}!`);addXP(100);checkBadge('goal_complete');}
+  else{addXP(15);toast("💰 Contribution added!");}
+  save();closeModal('contModal');renderAll();
+}
+
+function deleteGoal(id){
+  if(!confirm('Delete this goal?'))return;
+  S.goals=S.goals.filter(g=>g.id!==id);
+  save();renderAll();toast("🗑️ Goal removed");
+}
+
+// ==============================
+// GOAL YEAR
+// ==============================
+function switchGoalYear(yr,btn){
+  goalYear=yr;
+  document.querySelectorAll('.yr-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderGoals();
+}
+
+// ==============================
+// NET WORTH
+// ==============================
+function saveNW(){
+  S.netWorth.assets=parseFloat(document.getElementById('nw-a-inp').value)||0;
+  S.netWorth.liabilities=parseFloat(document.getElementById('nw-l-inp').value)||0;
+  save();closeModal('nwModal');checkBadge('positive_nw');renderAll();toast("📊 Net worth updated!");
+}
+
+// ==============================
+// SETTINGS
+// ==============================
+function saveSettings(){
+  S.player.name=document.getElementById('s-name').value.trim()||'Wealth Seeker';
+  S.player.currency=document.getElementById('s-curr').value;
+  save();closeModal('nameModal');renderAll();toast("✅ Settings saved!");
+}
+
+function confirmReset(){
+  if(confirm('Reset ALL data? This cannot be undone.')){
+    localStorage.removeItem('wq_v2');
+    S=emptyState();
+    save();closeModal('nameModal');renderAll();toast("🔄 Data reset");
+  }
+}
+
+// ==============================
+// MODALS
+// ==============================
+function openModal(id){
+  const m=document.getElementById(id);
+  if(id==='nameModal'){
+    document.getElementById('s-name').value=S.player.name;
+    document.getElementById('s-curr').value=S.player.currency||'₹';
+  }
+  if(id==='nwModal'){
+    document.getElementById('nw-a-inp').value=S.netWorth.assets||'';
+    document.getElementById('nw-l-inp').value=S.netWorth.liabilities||'';
+  }
+  m.classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mo').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
+
+// ==============================
+// TOAST & XP POP
+// ==============================
+function toast(msg){
+  const wrap=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className='toast';t.textContent=msg;
+  wrap.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+function showXPPop(amt){
+  const pop=document.createElement('div');
+  pop.className='xp-pop';
+  pop.textContent=`+${amt} XP`;
+  pop.style.cssText=`left:${window.innerWidth/2-30}px;top:${window.innerHeight/2}px`;
+  document.body.appendChild(pop);
+  setTimeout(()=>pop.remove(),1300);
+}
+
+// ==============================
+// RENDER FUNCTIONS
+// ==============================
+function updatePlayer(){
+  const{cur,nxt}=levelData();
+  const pct=xpPct();
+  // Home
+  document.getElementById('pname-hdr').textContent=S.player.name;
+  document.getElementById('pc-name').textContent=S.player.name;
+  document.getElementById('pc-title').textContent=cur.title;
+  document.getElementById('pc-lv').textContent=cur.level;
+  document.getElementById('xp-cur').textContent=S.player.xp;
+  document.getElementById('xp-nxt').textContent=nxt?nxt.xp:'MAX';
+  document.getElementById('xp-fill1').style.width=`${pct}%`;
+  document.getElementById('st-goals').textContent=S.goals.length;
+  document.getElementById('st-badges').textContent=S.badges.length;
+  document.getElementById('st-streak').textContent=S.player.streak;
+  const h=new Date().getHours();
+  document.getElementById('greet').textContent=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('streak-disp').innerHTML=S.player.streak>=2?`<span class="streak-badge">🔥 ${S.player.streak} month streak</span>`:'';
+  // Achievements
+  document.getElementById('a-xp').textContent=S.player.xp;
+  document.getElementById('a-lv').textContent=cur.level;
+  document.getElementById('xp-fill2').style.width=`${pct}%`;
+  document.getElementById('a-xp-cur').textContent=`${S.player.xp} XP`;
+  document.getElementById('a-xp-nxt').textContent=nxt?`Next: ${nxt.xp} XP`:'MAX LEVEL!';
+  document.getElementById('ach-sub').textContent=`${S.badges.length}/${BADGES.length} badges earned`;
+}
+
+function renderHome(){
+  const mdata=md();
+  const totalSpent=CATS.reduce((s,c)=>s+mdata.categories[c.id].spent,0);
+  const saved=mdata.income-totalSpent;
+  const totalBudget=CATS.reduce((s,c)=>s+mdata.categories[c.id].budget,0);
+  const remain=totalBudget>0?totalBudget-totalSpent:mdata.income-totalSpent;
+  const saveRate=mdata.income>0?Math.round((saved/mdata.income)*100):0;
+
+  document.getElementById('m-disp').textContent=monthName(curMonth);
+  document.getElementById('h-income').textContent=fmt(mdata.income);
+  document.getElementById('h-inc-src').textContent=mdata.incomeSource||'Tap Budget to set';
+  document.getElementById('h-spent').textContent=fmt(totalSpent);
+  document.getElementById('h-txn-ct').textContent=`${mdata.transactions.length} expense${mdata.transactions.length!==1?'s':''}`;
+  document.getElementById('h-saved').textContent=fmt(Math.max(0,saved));
+  document.getElementById('h-remain').textContent=fmt(Math.max(0,remain));
+  document.getElementById('sbar-fill').style.width=`${Math.max(0,Math.min(100,saveRate))}%`;
+  document.getElementById('h-rate').textContent=`${Math.max(0,saveRate)}% savings rate`;
+
+  // Health score
+  let score=0;
+  if(mdata.income>0)score+=20;
+  const budSet=CATS.filter(c=>mdata.categories[c.id].budget>0).length;
+  score+=Math.round((budSet/CATS.length)*25);
+  if(saveRate>=20)score+=20;else if(saveRate>=10)score+=10;
+  const overB=CATS.filter(c=>{const cat=mdata.categories[c.id];return cat.budget>0&&cat.spent>cat.budget;}).length;
+  score+=Math.max(0,20-overB*7);
+  if(S.goals.length>0)score+=10;
+  if(S.netWorth.assets>0)score+=5;
+  score=Math.min(100,score);
+
+  const circ=182.2;
+  document.getElementById('h-ring').style.strokeDashoffset=circ-(score/100)*circ;
+  document.getElementById('h-score').textContent=score;
+  const col=score>=70?'var(--green)':score>=40?'var(--gold)':'var(--red)';
+  document.getElementById('h-score').style.color=col;
+  document.getElementById('h-ring').style.stroke=col;
+  const[ht,hd]=score>=80?['Excellent 🌟','Your finances are in great shape. Keep it up!']:score>=60?['Good 👍','Solid habits. A few tweaks to reach excellent.']:score>=40?['Fair 📊','Set more budgets and contribute to goals.']:['Getting Started 🌱','Add income and category budgets to improve.'];
+  document.getElementById('h-title').textContent=ht;
+  document.getElementById('h-desc').textContent=hd;
+
+  // Recent txns
+  const el=document.getElementById('recent-txns');
+  const rec=mdata.transactions.slice(0,5);
+  el.innerHTML=rec.length?rec.map(t=>txnHTML(t)).join(''):`<div class="empty"><div class="ei">📋</div><p>No expenses yet.<br>Tap + to log one.</p></div>`;
+}
+
+function txnHTML(t,withDel=false){
+  const cat=CATS.find(c=>c.id===t.category)||CATS[8];
+  const d=new Date(t.date);
+  const ds=`${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]}`;
+  return `<div class="txn-item">
+    <div class="txn-ico ${cat.cls}">${cat.emoji}</div>
+    <div class="txn-info">
+      <div class="txn-nm">${t.note||cat.name}</div>
+      <div class="txn-meta">${cat.name} · ${ds}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="txn-amt">${fmt(t.amount)}</div>
+      ${withDel?`<button class="btn-d" style="padding:6px 10px;font-size:13px" onclick="deleteTxn(${t.id})">×</button>`:''}
+    </div>
+  </div>`;
+}
+
+function renderBudget(){
+  const mdata=md();
+  const totalSpent=CATS.reduce((s,c)=>s+mdata.categories[c.id].spent,0);
+  const totalBudget=CATS.reduce((s,c)=>s+mdata.categories[c.id].budget,0);
+  document.getElementById('b-income').textContent=fmtF(mdata.income);
+  document.getElementById('b-inc-note').textContent=mdata.incomeSource||'Tap Edit to set income for this month';
+  document.getElementById('b-sub').textContent=monthName(curMonth);
+  const overallPct=totalBudget>0?Math.round((totalSpent/totalBudget)*100):0;
+  document.getElementById('b-overall').textContent=totalBudget>0?`${overallPct}% of ${fmt(totalBudget)} used`:'';
+
+  document.getElementById('cat-list').innerHTML=CATS.map(cat=>{
+    const data=mdata.categories[cat.id];
+    const pct=data.budget>0?Math.min(100,(data.spent/data.budget)*100):0;
+    const over=data.budget>0&&data.spent>data.budget;
+    const col=over?'var(--red)':pct>80?'var(--gold)':cat.color;
+    return `<div class="cat-item">
+      <div class="cat-hdr">
+        <div class="cat-l">
+          <div class="cat-ico ${cat.cls}">${cat.emoji}</div>
+          <div><div class="cat-name">${cat.name}</div><div class="cat-amts">${fmt(data.spent)} ${data.budget>0?'/ '+fmt(data.budget):'spent'}</div></div>
+        </div>
+        <div class="cat-r">
+          <div class="cat-pct" style="color:${col}">${data.budget>0?Math.round(pct)+'%':'—'}</div>
+          <div class="cat-status">${over?'⚠️ Over budget':data.budget>0?(pct>80?'⚡ Near limit':'✓ On track'):'No limit set'}</div>
+        </div>
+      </div>
+      <div class="cat-bar"><div class="cat-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('txn-count').textContent=`${mdata.transactions.length} items`;
+  const el=document.getElementById('full-txns');
+  el.innerHTML=mdata.transactions.length?mdata.transactions.map(t=>txnHTML(t,true)).join(''):`<div class="empty"><div class="ei">📊</div><p>No expenses logged yet</p></div>`;
+}
+
+function renderGoals(){
+  const filtered=goalYear==='all'?S.goals:S.goals.filter(g=>g.year===goalYear);
+  document.getElementById('g-total').textContent=fmt(filtered.reduce((s,g)=>s+g.target,0));
+  document.getElementById('g-saved').textContent=fmt(filtered.reduce((s,g)=>s+g.current,0));
+  const el=document.getElementById('goals-list');
+  if(!filtered.length){el.innerHTML=`<div class="empty"><div class="ei">🎯</div><p>No goals for this period.<br>Tap "New Goal" to get started.</p></div>`;return;}
+  el.innerHTML=filtered.map(g=>{
+    const pct=Math.min(100,Math.round((g.current/g.target)*100));
+    const done=g.current>=g.target;
+    const circ=2*Math.PI*24;
+    const off=circ-(pct/100)*circ;
+    return `<div class="goal-card" style="border-color:${done?'rgba(0,214,143,.3)':'rgba(255,255,255,.07)'}">
+      ${done?'<div style="position:absolute;top:14px;right:14px;font-size:11px;font-weight:700;color:var(--green);background:rgba(0,214,143,.1);border:1px solid rgba(0,214,143,.2);border-radius:20px;padding:3px 10px">✓ ACHIEVED</div>':''}
+      <div class="goal-hdr">
+        <div class="goal-emoji">${g.emoji}</div>
+        <div class="goal-info">
+          <div class="goal-name">${g.name}</div>
+          <div class="goal-dead">📅 ${g.deadline||g.year} · ${g.year}</div>
+        </div>
+        <div class="gring">
+          <svg viewBox="0 0 58 58"><circle class="ring-bg" cx="29" cy="29" r="24"/><circle class="ring-fill" cx="29" cy="29" r="24" stroke="${done?'#00D68F':g.color}" stroke-dasharray="${circ}" stroke-dashoffset="${off}"/></svg>
+          <div class="ring-pct" style="color:${done?'var(--green)':g.color}">${pct}%</div>
+        </div>
+      </div>
+      <div class="goal-amts">
+        <div><div class="goal-curr">${fmt(g.current)}</div><div class="goal-tgt">of ${fmt(g.target)}</div></div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text2)">Remaining</div>
+          <div style="font-family:var(--font-d);font-size:15px;font-weight:700;color:${done?'var(--green)':'var(--text)'}">${done?'Done! 🎊':fmt(g.target-g.current)}</div>
+        </div>
+      </div>
+      <div class="gbar"><div class="gbar-fill" style="width:${pct}%;background:${done?'var(--green)':g.color}"></div></div>
+      <div class="goal-acts">
+        <button class="btn-s" onclick="deleteGoal(${g.id})" style="flex:0;padding:10px 14px">🗑️</button>
+        ${!done?`<button class="btn-a" onclick="openContrib(${g.id})">💰 Add Funds</button>`:'<div style="flex:1;text-align:center;font-size:26px">🎊</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAnalytics(){
+  const mdata=md();
+  const totalSpent=CATS.reduce((s,c)=>s+mdata.categories[c.id].spent,0);
+  const saved=mdata.income-totalSpent;
+  const saveRate=mdata.income>0?Math.max(0,Math.round((saved/mdata.income)*100)):0;
+  document.getElementById('a-rate').textContent=`${saveRate}%`;
+
+  // Donut
+  const svg=document.getElementById('donut-svg');
+  const leg=document.getElementById('donut-legend');
+  const catData=CATS.map(c=>({...c,spent:mdata.categories[c.id].spent})).filter(c=>c.spent>0);
+  if(!catData.length||totalSpent===0){
+    svg.innerHTML=`<circle cx="95" cy="95" r="75" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="20"/>`;
+    leg.innerHTML='<div style="text-align:center;padding:10px;color:var(--text3);font-size:13px">No spending data yet</div>';
+  } else {
+    const circ=2*Math.PI*75;let off=0;
+    const segs=catData.map(cat=>{const dash=(cat.spent/totalSpent)*circ;const s={...cat,off,dash};off+=dash;return s;});
+    svg.innerHTML=`<circle cx="95" cy="95" r="75" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="20"/>
+      ${segs.map(s=>`<circle cx="95" cy="95" r="75" fill="none" stroke="${s.color}" stroke-width="20" stroke-dasharray="${s.dash} ${circ-s.dash}" stroke-dashoffset="${-s.off}" transform="rotate(-90 95 95)" stroke-linecap="butt"/>`).join('')}`;
+    leg.innerHTML=segs.map(s=>`<div class="leg-item"><div class="leg-dot" style="background:${s.color}"></div><span class="leg-label">${s.emoji} ${s.name}</span><span class="leg-amt">${fmt(s.spent)}</span><span class="leg-pct">${Math.round((s.spent/totalSpent)*100)}%</span></div>`).join('');
+  }
+
+  // Trend
+  const keys=Object.keys(S.months).filter(k=>S.months[k].income>0).sort().slice(-6);
+  const tEl=document.getElementById('trend-card');
+  if(keys.length<2){
+    tEl.innerHTML=`<div class="empty"><div class="ei">📈</div><p>Log income in 2+ months<br>to see your trend</p></div>`;
+  } else {
+    const maxI=Math.max(...keys.map(k=>S.months[k].income));
+    tEl.innerHTML=`<div class="trend-wrap">
+      ${keys.map(k=>{
+        const m=S.months[k];const sp=CATS.reduce((s,c)=>s+m.categories[c.id].spent,0);
+        const iH=Math.round((m.income/maxI)*88);const sH=Math.round((sp/maxI)*88);const svH=Math.max(0,iH-sH);
+        const[,mo]=k.split('-').map(Number);const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1];
+        return `<div class="trend-col">
+          <div style="width:100%;display:flex;flex-direction:column-reverse;gap:1px">
+            <div class="trend-bar" style="height:${sH}px;background:rgba(255,77,109,.65)"></div>
+            <div class="trend-bar" style="height:${svH}px;background:rgba(0,214,143,.65)"></div>
+          </div>
+          <div class="trend-lbl">${mn}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;color:var(--text2)">
+      <span><span style="display:inline-block;width:8px;height:8px;background:var(--green);border-radius:2px;margin-right:4px;opacity:.8"></span>Saved</span>
+      <span><span style="display:inline-block;width:8px;height:8px;background:var(--red);border-radius:2px;margin-right:4px;opacity:.8"></span>Spent</span>
+    </div>`;
+  }
+
+  // Net Worth
+  const nw=S.netWorth.assets-S.netWorth.liabilities;
+  const tot=S.netWorth.assets+S.netWorth.liabilities||1;
+  document.getElementById('nw-disp').textContent=fmtF(nw);
+  document.getElementById('nw-disp').style.color=nw>=0?'var(--green)':'var(--red)';
+  document.getElementById('nw-a-bar').style.width=`${(S.netWorth.assets/tot)*100}%`;
+  document.getElementById('nw-l-bar').style.width=`${(S.netWorth.liabilities/tot)*100}%`;
+  document.getElementById('nw-assets').textContent=fmt(S.netWorth.assets);
+  document.getElementById('nw-liab').textContent=fmt(S.netWorth.liabilities);
+
+  // Ratios
+  const goalProg=S.goals.length>0?Math.round((S.goals.reduce((s,g)=>s+g.current,0)/S.goals.reduce((s,g)=>s+g.target,0))*100):0;
+  const expRat=mdata.income>0?Math.round((totalSpent/mdata.income)*100):0;
+  const ratios=[
+    {icon:"💹",name:"Savings Rate",val:`${saveRate}%`,desc:saveRate>=20?"Excellent! 20%+ builds wealth fast.":saveRate>=10?"Good. Aim for 20%+ for faster growth.":"Aim to save at least 10% of income.",col:saveRate>=20?'var(--green)':saveRate>=10?'var(--gold)':'var(--red)'},
+    {icon:"📊",name:"Expense Ratio",val:mdata.income>0?`${expRat}%`:"—",desc:"% of income spent. Keep it below 70%.",col:expRat<70?'var(--green)':'var(--red)'},
+    {icon:"🎯",name:"Goal Progress",val:S.goals.length?`${goalProg}%`:"—",desc:`${S.goals.filter(g=>g.current>=g.target).length} of ${S.goals.length} goals completed.`,col:'var(--blue)'},
+    {icon:"📈",name:"Net Worth",val:fmtF(nw),desc:nw>0?"Assets exceed liabilities. Great!":"Work on reducing liabilities.",col:nw>=0?'var(--green)':'var(--red)'},
+    {icon:"🔥",name:"Budget Streak",val:`${S.player.streak} mo`,desc:S.player.streak>=3?"Impressive consistency! Keep going!":S.player.streak>=1?"Good start. Maintain it each month.":"Log income monthly to build your streak.",col:S.player.streak>=3?'var(--gold)':S.player.streak>=1?'var(--text)':'var(--text3)'},
+    {icon:"🏆",name:"XP Level",val:levelData().cur.title,desc:`${S.player.xp} total XP earned. ${levelData().nxt?`${levelData().nxt.xp-S.player.xp} XP to next level.`:'Max level reached!'}`,col:'var(--gold)'},
+  ];
+  document.getElementById('ratio-cards').innerHTML=ratios.map(r=>`
+    <div class="ratio-card">
+      <div style="font-size:24px">${r.icon}</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;font-weight:600;color:var(--text2)">${r.name}</span>
+          <span style="font-family:var(--font-d);font-size:15px;font-weight:700;color:${r.col}">${r.val}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">${r.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderAchievements(){
+  // Level roadmap
+  document.getElementById('lv-roadmap').innerHTML=LEVELS.map(lv=>{
+    const done=S.player.xp>=lv.xp;
+    const isCur=levelData().cur.level===lv.level;
+    return `<div class="lv-item">
+      <div class="lv-ball" style="background:${done?'linear-gradient(135deg,var(--gold),#D4941C)':'rgba(255,255,255,.05)'};color:${done?'#000':'var(--text3)'}">${lv.emoji}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:${done?'var(--text)':'var(--text3)'}">${lv.title}</div>
+        <div style="font-size:11px;color:var(--text3)">${lv.xp} XP required</div>
+      </div>
+      ${isCur?'<span style="font-size:11px;font-weight:700;color:var(--gold);background:rgba(244,185,66,.1);border:1px solid rgba(244,185,66,.2);border-radius:20px;padding:3px 10px">← You</span>':''}
+      ${done&&!isCur?'<span style="font-size:16px">✅</span>':''}
+    </div>`;
+  }).join('');
+
+  // Badges
+  document.getElementById('badges-grid').innerHTML=BADGES.map(b=>{
+    const earned=S.badges.includes(b.id);
+    return `<div class="badge-card ${earned?'earned':'locked'}">
+      <span class="badge-em">${b.emoji}</span>
+      <div class="badge-nm">${b.name}</div>
+      <div class="badge-ds">${b.desc}</div>
+      ${b.xp>0?`<div class="badge-xp">+${b.xp} XP</div>`:''}
+      ${earned?'<div style="font-size:10px;color:var(--green);margin-top:4px;font-weight:700">✓ Earned</div>':''}
+    </div>`;
+  }).join('');
+}
+
+function renderAll(){
+  updatePlayer();
+  renderHome();
+  renderBudget();
+  renderGoals();
+  renderAnalytics();
+  renderAchievements();
+}
+
+// ==============================
+// INIT
+// ==============================
+load();
+renderAll();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});
+}
+</script>
+</body>
+</html>
